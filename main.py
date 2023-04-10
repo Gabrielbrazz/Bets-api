@@ -1,11 +1,6 @@
 import os
 import requests
-import xlsxwriter
 import pandas as pd
-import numpy as np
-import openpyxl
-from openpyxl import Workbook, load_workbook
-from openpyxl.styles import Border, Side, Font, Alignment, PatternFill, numbers
 
 
 
@@ -14,9 +9,9 @@ API_KEY ='b6a13693bb25fc01d346c527c6a24035'
 
 SPORT = 'upcoming' # use the sport_key from the /sports endpoint below, or use 'upcoming' to see the next 8 games across all sports
 
-REGIONS = 'us' # uk | us | eu | au. Multiple can be specified if comma delimited
+REGIONS = 'uk' # uk | us | eu | au. Multiple can be specified if comma delimited
 
-MARKETS = 'h2h,spreads' # h2h | spreads | totals. Multiple can be specified if comma delimited
+MARKETS = 'h2h' # h2h | spreads | totals. Multiple can be specified if comma delimited
 
 ODDS_FORMAT = 'decimal' # decimal | american
 
@@ -76,3 +71,37 @@ else:
     # Check the usage quota
     print('Remaining requests', odds_response.headers['x-requests-remaining'])
     print('Used requests', odds_response.headers['x-requests-used'])
+
+
+# Organizando os dados recebidos da API com Pandas
+
+# Dados da API
+data = {
+    'success': True,
+    'data': [
+        {
+            'sport_key': 'soccer_epl',
+            'teams': ['Arsenal', 'Everton'],
+            'commence_time': 1610296800,
+            'sites': [
+                {
+                    'site_key': 'betfair',
+                    'site_nice': 'Betfair',
+                    'last_update': 1610288638,
+                    'odds': {
+                        'h2h': [2.2, 3.3, 3.9]
+                    }
+                }
+            ]
+        },
+        # ...
+    ]
+}
+
+# Transformando os dados em um DataFrame
+df = pd.json_normalize(data['data'], 'sites', ['teams', 'commence_time', 'sport_key', ], record_prefix='site_')
+df['odd'] = df['odds.h2h'].apply(lambda x: x[0]) # Adicionando a odd de casa (home) como uma coluna
+df['odd_away'] = df['odds.h2h'].apply(lambda x: x[1]) # Adicionando a odd de visitante (away) como uma coluna
+
+# Visualizando o DataFrame
+print(df)
